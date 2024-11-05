@@ -1,7 +1,7 @@
 ##################################
 #
 # Joakim Tips: Ha en annan AI i början som sammanfattar / Förkortar JSON filen för att minimera antalet Tokens
-#
+# Simon Tips: If I do the thing about I can pull the html document insted of .json which will give extra stuff :D
 #
 ##################################
 

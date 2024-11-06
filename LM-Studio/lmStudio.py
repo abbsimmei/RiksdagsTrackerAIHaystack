@@ -37,12 +37,13 @@ def requestApi(url):
 #                                #
 ##################################
 
-def chatMemoryFunc(memory, answer):
-    newMemory = "Du är en hjälpsam assisten som ska svara på frågor. Du kommer få kontext både på ett dokument och föredetta diskutioner och du ska använda detta för att ge bättre svar."
-
-    newMemory = "Test"
-
+def chatMemoryFunc(memory, jsonDocument):
+    newMemory = "Du är en hjälpsam assisten som ska svara på frågor. Du kommer få kontext både på ett dokument och föredetta diskutioner och du ska använda detta för att ge bättre svar. Här är JSON Dokumentet: (" + str(jsonDocument) + "). Och här kommer före detta frågor och svar: (" + str(memory) + ")"
     return newMemory
+
+def questAns(previous, question, answer):
+    discussion = previous + "Nästa Fråga var: (" + question + "). Och ditt svar var: (" + answer + ")" 
+    return discussion
 
 apiAnswer = requestApi(url)
 print(apiAnswer)
@@ -65,7 +66,9 @@ while True:
         {"role": "system", "content": context},
         {"role": "user", "content": question}
     ],
-    temperature=0.7,
+    max_completion_tokens = 100,
+    max_tokens = 100,
+    temperature=0.07,
     )
     answerMessage = completion.choices[0].message
     answerContent = answerMessage.content

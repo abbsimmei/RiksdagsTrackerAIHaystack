@@ -12,7 +12,10 @@ from openai import OpenAI
 import requests
 import json
 
-memory = ""
+# Point to the local server
+client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+
+
 
 ##################################
 #                                #
@@ -22,6 +25,7 @@ memory = ""
 
 url = "https://data.riksdagen.se/dokument/HC023020.json"
 
+
 def requestApi(url):
     try:
         r = requests.get(url)
@@ -30,6 +34,28 @@ def requestApi(url):
         return j
     except Exception as e:
         print(f"An error occurred: {e}")
+
+apiAnswer = requestApi(url)
+#print(apiAnswer)
+
+##################################
+#                                #
+#            API HTML            #
+#                                #
+##################################
+
+def requestApiHtml(url):
+    try:
+        r = requests.get(url)
+        s = r.text
+        return s
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+urlHtml = "https://data.riksdagen.se/dokument/HC023020.html"
+htmlApiAnswer = requestApiHtml(urlHtml)
+print (htmlApiAnswer)
+
 
 ##################################
 #                                #
@@ -42,23 +68,27 @@ def chatMemoryFunc(memory, jsonDocument):
     return newMemory
 
 def questAns(previous, question, answer):
-    discussion = previous + "Nästa Fråga var: (" + question + "). Och ditt svar var: (" + answer + ")" 
+    discussion = previous + " Nästa Fråga var: (" + question + "). Och ditt svar var: (" + answer + ")" 
     return discussion
 
-apiAnswer = requestApi(url)
-print(apiAnswer)
 
-# Point to the local server
-client = OpenAI(base_url="http://localhost:1234/v1", api_key="lm-studio")
+##################################
+#                                #
+#             Chat               #
+#                                #
+##################################
 
-
-
+memory = ""
 while True:
     print("---------------------------------------")
     question = input("Message to RiksdagsTracker GPT: ")
     print("\n")
 
-    context = "Du är en hjälpsam assisten som ska svara på frågor angående detta JSON dokument: " + str(apiAnswer)
+    #context = "Du är en hjälpsam assisten som ska svara på frågor angående detta JSON dokument: " + str(apiAnswer)
+    context = chatMemoryFunc(memory, apiAnswer)
+    print("--------------")
+    print(context)
+    print("--------------")
 
     completion = client.chat.completions.create(
     model="model-identifier",
@@ -72,6 +102,12 @@ while True:
     )
     answerMessage = completion.choices[0].message
     answerContent = answerMessage.content
+
+    memory = questAns(memory, question, answerContent)
+    print("--------------")
+    print(memory)
+    print("--------------")
+
     print("#####################")
     print("# RikdagsGPT Svarar #")
     print("#####################")

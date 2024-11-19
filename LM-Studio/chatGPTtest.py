@@ -34,7 +34,7 @@ def requestApiHtml(url):
     except Exception as e:
         print(f"An error occurred: {e}")
 
-urlHtml = "https://data.riksdagen.se/dokument/HC023020.html"
+urlHtml = "https://data.riksdagen.se/dokument/HC023161.html"
 htmlApi = requestApiHtml(urlHtml)
 
 # Function to remove tags from HTML

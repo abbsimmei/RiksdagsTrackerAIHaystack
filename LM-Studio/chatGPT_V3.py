@@ -77,26 +77,11 @@ def questAns(previous, question, answer, apiAnswer):
     return previous + f"Användarens nästa Fråga var: ({question}). Och assistentens svar var: ({answer}). Api svar som du nu har tillgång till: ({apiAnswer})"
 
 ##################################
-#             Chat               #
+#           Chat Func            #
 ##################################
 
-memory = ""
-apiAnswer = ""
-
-answerNow = True
-while True:
-    if answerNow == True:
-        print("---------------------------------------")
-        question = input("Message to RiksdagsTracker GPT: ")
-        print("\n")
-    input("continue?")
-    if answerNow == True:
-        context = chatContextFunc(1,"")
-    elif answerNow == False:
-        context = chatContextFunc(2, apiAnswer)
-        
-    print(context)
-    input("continue?")
+async def createURLsearch(question):
+    context = chatContextFunc(1,"")
 
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -106,28 +91,46 @@ while True:
         ],
         temperature=0.07
     )
-
     answerMessage = completion.choices[0].message
     answerContent = answerMessage.content
 
-    
-
-    print(answerContent)
-    input("continue?")
-
     url = extract_text_between(answerContent, "url:", ":url")
-    if url != "":
-        apiAnswer = requestApi(url)
-        answerNow = False
-    
-    memory = questAns(memory, question, answerContent, apiAnswer)
-    print(memory)
-    input("continue?")
 
-    if answerNow == True:
-        print("#####################")
-        print("#     API answer    #")
-        print("#####################")
-        print("\n")
-        print(answerContent)
-        print("\n")
+    if url != "":
+        apiAnswer = await requestApi(url)
+
+    return apiAnswer
+
+def shortenAnswer(thingToShorten):
+    context = chatContextFunc(2,thingToShorten)
+    question = "Snälla sammanställ svaret från API'n"
+    completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": context},
+            {"role": "user", "content": question}
+        ],
+        temperature=0.07
+    )
+    answerMessage = completion.choices[0].message
+    answerContent = answerMessage.content
+
+    return answerContent
+
+
+##################################
+#             Chat               #
+##################################
+
+while True:
+
+    question = input("Message to RiksdagsTracker GPT: ")
+
+    answerContent = createURLsearch(question)
+    print(answerContent)
+    shortenedAnswer = shortenAnswer(answerContent)
+
+    print(shortenedAnswer)
+
+
+

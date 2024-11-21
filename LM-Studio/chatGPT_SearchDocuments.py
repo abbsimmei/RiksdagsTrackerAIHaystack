@@ -81,6 +81,7 @@ def questAns(previous, question, answer, apiAnswer):
 ##################################
 
 memory = ""
+apiAnswer = ""
 
 answerNow = True
 while True:
@@ -89,8 +90,13 @@ while True:
         question = input("Message to RiksdagsTracker GPT: ")
         print("\n")
     input("continue?")
-    context = chatContextFunc(1)
+    if answerNow == True:
+        context = chatContextFunc(1,"")
+    elif answerNow == False:
+        context = chatContextFunc(2, apiAnswer)
+        
     print(context)
+    input("continue?")
 
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -107,6 +113,7 @@ while True:
     
 
     print(answerContent)
+    input("continue?")
 
     url = extract_text_between(answerContent, "url:", ":url")
     if url != "":
@@ -114,7 +121,8 @@ while True:
         answerNow = False
     
     memory = questAns(memory, question, answerContent, apiAnswer)
-
+    print(memory)
+    input("continue?")
 
     if answerNow == True:
         print("#####################")

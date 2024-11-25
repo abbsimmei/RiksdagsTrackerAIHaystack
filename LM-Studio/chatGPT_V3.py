@@ -52,10 +52,10 @@ def requestApi(url):
 
 
 ##################################
-#            Memory              #
+#           "Memory"             #
 ##################################
 
-def chatContextFunc(id, apiAnswer):
+def chatContextFunc(id, apiAnswer, userQuestion):
     if id == 1:
         return ("Du är en hjälpsam assisten som ska söka igenom en databas över Riksdagen. Användaren kommer ställa dig en fråga till dig för att hitta ett dokument"
         " som användaren vill hitta. Det måste inte vara ett specifikt dokument utan användaren kan också bara vilja hitta ett dokument om ett visst ämne."
@@ -69,9 +69,10 @@ def chatContextFunc(id, apiAnswer):
         " När du har tagit fram en url vill jag att du svara med: [url:lägg url'n här.:url]")
     elif id == 2:
         return ("Du är en hjälpsam assisten som ska hjälpa en användare att söka igenom Riksdagens databas. Vid detta tillfälle har vi fått ett svar av Riksdagens api"
-        "Du kommer få tillgång till svaret och ska sammanställa det på ett snyggt sätt för användaren. Jag vill att all relevant data ska visas. Du ska inte visa url'ens utan istället ska du erbjuda dig att berätta mer om varje sak."
-        "Här är svaret från api'n som du ska förkorta " + str(apiAnswer))
-        
+        "Du kommer få tillgång till svaret och ska sammanställa det på ett snyggt sätt för användaren. Jag vill att all relevant data ska visas, där relevant utgår från användarens fråga. Du ska inte visa url'ens utan istället ska du erbjuda dig att berätta mer om varje sak."
+        "Här är användarens fråga som du ska förkorta api svaret utifrån:" + str(userQuestion) +
+        "| och här är svaret från api'n som du ska förkorta " + str(apiAnswer)) 
+            
     
 def questAns(previous, question, answer, apiAnswer):
     return previous + f"Användarens nästa Fråga var: ({question}). Och assistentens svar var: ({answer}). Api svar som du nu har tillgång till: ({apiAnswer})"
@@ -80,8 +81,8 @@ def questAns(previous, question, answer, apiAnswer):
 #           Chat Func            #
 ##################################
 
-async def createURLsearch(question):
-    context = chatContextFunc(1,"")
+def createURLsearch(question):
+    context = chatContextFunc(1,"", "")
 
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -97,13 +98,13 @@ async def createURLsearch(question):
     url = extract_text_between(answerContent, "url:", ":url")
 
     if url != "":
-        apiAnswer = await requestApi(url)
+        apiAnswer = requestApi(url)
 
     return apiAnswer
 
-def shortenAnswer(thingToShorten):
-    context = chatContextFunc(2,thingToShorten)
-    question = "Snälla sammanställ svaret från API'n"
+def shortenAnswer(thingToShorten, question2):
+    context = chatContextFunc(2,thingToShorten, question2)
+    question = "Snälla sammanställ svaret från API'n utifrån användarens fråga som du fick som context"
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
@@ -117,20 +118,43 @@ def shortenAnswer(thingToShorten):
 
     return answerContent
 
+##################################
+#            Storage             #
+##################################
+
+apiAnswers = {}
+questions = []
+chatAnswers = []
 
 ##################################
 #             Chat               #
 ##################################
 
+
 while True:
 
     question = input("Message to RiksdagsTracker GPT: ")
+    questions.append(question)
 
     answerContent = createURLsearch(question)
-    print(answerContent)
-    shortenedAnswer = shortenAnswer(answerContent)
+
+    #Delar svaret i två delar samt sparar.
+    answerLen = len(answerContent["dokumentlista"]["dokument"])
+    for i in range(answerLen):
+        if len(questions) not in apiAnswers:
+            apiAnswers[len(questions)] = [[],[]]  
+
+        if i < (answerLen / 2):
+            apiAnswers[len(questions)][0].append(answerContent["dokumentlista"]["dokument"][i])
+        else:
+            apiAnswers[len(questions)][1].append(answerContent["dokumentlista"]["dokument"][i])
+
+    print(apiAnswers)
+    shortenedAnswer = shortenAnswer(str(apiAnswers[len(questions)][0]), question)
 
     print(shortenedAnswer)
+
+    chatAnswers.append(shortenedAnswer)
 
 
 

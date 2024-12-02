@@ -48,14 +48,24 @@ def requestApi(url):
         response.raise_for_status()  # Ensure we get a valid response
         return response.json()
     except Exception as e:
-        print(f"An error occurred: {e}")
+        pass
+        #print(f"An error occurred: {e}")
 
+def requestHtmlApi(url):
+    try:   
+        print("Fetching html url")
+        response = requests.get(url)
+        response.raise_for_status()  # Ensure we get a valid response
+        return response
+    except Exception as e:
+        pass
+        #print(f"An error occurred: {e}")   
 
 ##################################
 #           "Memory"             #
 ##################################
 
-def chatContextFunc(id, apiAnswer, fdFragor):
+def chatContextFunc(id, apiAnswer, fdFragor, strucAnswer):
     if id == 1:
         return ("Du är en hjälpsam assisten som ska söka igenom en databas över Riksdagen. Användaren kommer ställa dig en fråga till dig för att hitta ett dokument"
         " som användaren vill hitta. Det måste inte vara ett specifikt dokument utan användaren kan också bara vilja hitta ett dokument om ett visst ämne."
@@ -77,10 +87,8 @@ def chatContextFunc(id, apiAnswer, fdFragor):
         " Om användarens fråga kräver ett api call för mer information ska du förja steg 1, men om användarens fråga är en följdfråga på en tidigare fråga ska du följa steg 2"
 
         " Steg 1: "
-        " För att skapa ett api call har du tillgång till denna URL: https://data.riksdagen.se/dokumentlista/?sok=[Sökord]&doktyp=[dokumenttyp]&from=[Från datum]&tom=[till datum]&sort=rel&utformat=json&p=1&a=s#soktraff"
+        " För att skapa ett api call har du tillgång till denna URL: https://data.riksdagen.se/dokumentlista/?sok=[Sökord]&doktyp=mot&sort=rel&utformat=json&p=1&a=s#soktraff"
         " [sökord] ska du bytta ut mot huvud ord av det använderan letar efter. Till exemple flyg eller miljön. Du ska bara ha med huvud ord och inga konjuktioner."
-        " [dokumenttyp] ska du bytta ut mot en dokumenttyp som användare letar efter. Du har tillgång till betänkande (bet), Motion (mot), Votering (votering), Skriftlig fråga (fr) och Proposition (prop)"
-        " [Från datum] och [till datum] ska du bytta ut mot datum som användaren letar efter."
         " Om filtret inte är relevant för användarens fråga ska det lämnas tomt. Det vill säga utan [exempel]"
         " När du har tagit fram en url vill jag att du svara med: [url:lägg url'n här.]"
         " Till exempel [url:https://exempel.url.se/exempel]"
@@ -90,9 +98,12 @@ def chatContextFunc(id, apiAnswer, fdFragor):
         
         " För att hjälpa med att bestämma vilket fall du ska utgå ifrån kommer du här få alla frågor användaren har ställt:" + str(fdFragor))
     elif id == 4:
-        return(" Du ska med hjälp av föredetta frågor och svar ge ut ett api url. Användaren kommer stäla dig en fråga och du ska hitta dokument användaren syftar på"
-               " Här kommer före detta frågor:" + str(fdFragor) +
-               " Här kommer före detta svar på frågorna:")     
+        return(" Du kommer få dokumentation på ett flertal dokument, samt en fråga från användaren. Jag vill att du hittar det dokument användaren syftar på och skriver ut dess html url"
+               " Här kommer användarens fråga:" + str(fdFragor) +
+               " Här kommer dokumentationen för dokumenten:" + str(strucAnswer) +
+               " Här kommer dina föredetta svar vilket du ska utgå ifrån:" + str(apiAnswer) + 
+                " När du har tagit fram en url vill jag att du svara med: [url:lägg url'n här.]"
+                " Till exempel [url:https://exempel.url.se/exempel]")     
     
 def questAns(previous, question, answer, apiAnswer):
     return previous + f"Användarens nästa Fråga var: ({question}). Och assistentens svar var: ({answer}). Api svar som du nu har tillgång till: ({apiAnswer})"
@@ -101,8 +112,8 @@ def questAns(previous, question, answer, apiAnswer):
 #           Chat Func            #
 ##################################
 
-def createURLsearch(question, questions, num):
-    context = chatContextFunc(num,"", questions)
+def createURLsearch(question, questions, num, structuredAnswers):
+    context = chatContextFunc(num,chatAnswers, questions, structuredAnswers)
 
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -123,13 +134,15 @@ def createURLsearch(question, questions, num):
 
     url = extract_text_between(answerContent, "[url:", "]")
 
-    if url != "":
+    if url != "" and num != 4:
         apiAnswer = requestApi(url)
+    elif num == 4:
+        apiAnswer = requestHtmlApi(url)
 
     return apiAnswer
 
 def normalChatCall(thingToShorten, question2, num):
-    context = chatContextFunc(num,thingToShorten,"")
+    context = chatContextFunc(num,thingToShorten,"","")
     
     completion = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -144,6 +157,7 @@ def normalChatCall(thingToShorten, question2, num):
 
     return answerContent
 
+
 ##################################
 #            Storage             #
 ##################################
@@ -151,6 +165,8 @@ def normalChatCall(thingToShorten, question2, num):
 apiAnswers = []
 questions = []
 chatAnswers = []
+
+structuredAnswers = []
 
 #storage = {"questions": {"Ge mig ett dokument om miljön":{"svar": "ergnergnerogn", "api": "api fetch"}}}
 
@@ -169,9 +185,26 @@ def loopFetchApi():
     question = input("Message to RiksdagsTracker GPT: ")
     questions.append(question)
 
-    answerContent = createURLsearch(question, questions, 3)
+    answerContent = createURLsearch(question, questions, 3, "")
     apiAnswers.append(answerContent)
+    
+    if answerContent != False:
+        structuredAnswer = []
 
+        for dokument in answerContent["dokumentlista"]["dokument"]:
+            #print(dokument["traff"])
+
+            appendifier = {"titel":dokument["titel"], "undertitel":dokument["undertitel"], "doktyp":dokument["typ"], "sammanfattning":dokument["summary"], "id":dokument["dok_id"], "dokument_url_html":dokument["dokument_url_html"]}
+
+            structuredAnswer.append(appendifier)
+
+        #print(structuredAnswer)
+        structuredAnswers.append(structuredAnswer)
+    else:
+        structuredAnswer = False
+
+    #input("continue?")
+    
     #Delar svaret i två delar samt sparar.
     #answerLen = len(answerContent["dokumentlista"]["dokument"])
     #for i in range(answerLen):
@@ -183,8 +216,12 @@ def loopFetchApi():
     #    else:
     #        apiAnswers[len(questions)][1].append(answerContent["dokumentlista"]["dokument"][i])
 
-    return answerContent, question
+    return structuredAnswer, question
 
+def loopFollowUp(question, structuredAnswers):
+    answerContent = createURLsearch(question, question, 4, structuredAnswers)
+
+    return answerContent
 
 
 ##################################
@@ -194,6 +231,8 @@ val = ["fetch api", "förkorta api svar", "följdfråga"]
 valt = "fetch api"
 
 while True:
+    print(valt)
+    input("Continue?")
     if valt == "fetch api":
         answer, question = loopFetchApi()
         if answer == False:
@@ -204,8 +243,14 @@ while True:
         loopShortenText(answer, question)
         valt = val[0]
     elif valt == "följdfråga":
-        print("följdfråga")
-        valt = val[0]
+        print("Inne i följdfråga")
+        print(structuredAnswers)
+        answer = loopFollowUp(question, structuredAnswers)
+        print(answer)
+        #print(question)
+
+        #Sätter till att förkorta svar. 
+        valt = val[1]
 
 
 

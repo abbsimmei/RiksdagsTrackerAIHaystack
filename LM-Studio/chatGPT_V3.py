@@ -244,7 +244,6 @@ while True:
         valt = val[0]
     elif valt == "följdfråga":
         print("Inne i följdfråga")
-        print(structuredAnswers)
         answer = loopFollowUp(question, structuredAnswers)
         print(answer)
         #print(question)

@@ -88,6 +88,9 @@ def chatContextFunc(id, apiAnswer, fdFragor, strucAnswer):
         " Du kommer få tillgång till svaret och ska sammanställa det på ett snyggt sätt för användaren. Jag vill att all relevant data utifrån användarens fråga ska visas. Du ska inte visa url'ens utan istället ska du erbjuda dig att berätta mer om varje sak. "
         " Här är svaret från api'n som du ska förkorta " + str(apiAnswer)) 
     elif id == 3:
+        print("Före detta frågor")
+        print(fdFragor)
+        input("contiune?")
         return ("Du är en hjälpsam assisten som ska söka igenom en databas över Riksdagen, samt bestämma vad nästa steg kommer vara för detta program. Användaren kommer ställa dig en fråga till dig som du ska utgå ifrån."
         " Om användarens fråga kräver ett api call för mer information ska du förja steg 1, men om användarens fråga är en följdfråga på en tidigare fråga ska du följa steg 2"
 
@@ -239,8 +242,8 @@ val = ["fetch api", "förkorta api svar", "följdfråga"]
 valt = "fetch api"
 
 while True:
-    print(valt)
-    input("Continue?")
+    #print(valt)
+    #input("Continue?")
     if valt == "fetch api":
         answer, question = loopFetchApi()
         if answer == False:
@@ -248,9 +251,9 @@ while True:
         else:
             valt = val[1]
     elif valt == "förkorta api svar":
-        print("Answer Content:")
-        print(answer)
-        input("Continue to shorten text.")
+        #print("Answer Content:")
+        #print(answer)
+        #input("Continue to shorten text.")
         loopShortenText(answer, question)
         valt = val[0]
     elif valt == "följdfråga":

@@ -53,10 +53,15 @@ def requestApi(url):
 
 def requestHtmlApi(url):
     try:   
-        print("Fetching html url")
-        response = requests.get(url)
-        response.raise_for_status()  # Ensure we get a valid response
-        return response
+        #print("Fetching html url")
+        if url[0:3] == "http":
+            response = requests.get(url)
+            response.raise_for_status()  # Ensure we get a valid response
+            return response.content
+        else:
+            response = requests.get("https:" + url)
+            response.raise_for_status()
+            return response.content
     except Exception as e:
         pass
         #print(f"An error occurred: {e}")   
@@ -138,7 +143,10 @@ def createURLsearch(question, questions, num, structuredAnswers):
         apiAnswer = requestApi(url)
     elif num == 4:
         apiAnswer = requestHtmlApi(url)
-
+        #print("Api Answer: ")
+        #print(apiAnswer)
+        #input("Continue?")
+        #print(apiAnswer.content)
     return apiAnswer
 
 def normalChatCall(thingToShorten, question2, num):
@@ -240,12 +248,15 @@ while True:
         else:
             valt = val[1]
     elif valt == "förkorta api svar":
+        print("Answer Content:")
+        print(answer)
+        input("Continue to shorten text.")
         loopShortenText(answer, question)
         valt = val[0]
     elif valt == "följdfråga":
-        print("Inne i följdfråga")
+        #print("Inne i följdfråga")
         answer = loopFollowUp(question, structuredAnswers)
-        print(answer)
+        #print(answer)
         #print(question)
 
         #Sätter till att förkorta svar. 

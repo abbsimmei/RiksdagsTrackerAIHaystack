@@ -47,7 +47,7 @@ fastapi dev fastApi_GPT.py
 
 To run the website to try out the chat please read the README.md file in ExampleWebsite/Riksdags-Tracker. (Note: it's in Swedish since it's copied from the RiksdagsTracker repository.)
 
-## Alternativly, if you don't want to set up the website you can simply run the GPT_Models/chatGPT_V3.py which is the same as the fastApi_GPT.py script but without the api, and therefor running in the terminal.
+Alternativly, if you don't want to set up the website you can simply run the GPT_Models/chatGPT_V3.py which is the same as the fastApi_GPT.py script but without the api, and therefor running in the terminal.
 
 ## **4. Examples**
 

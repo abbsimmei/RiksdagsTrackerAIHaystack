@@ -1,19 +1,5 @@
-#####################
-#
-# 1. Lyssna på vad användaren letar efter
-# 2. Ta fram en url som hittar dessa
-# 3. Fetcha svaret från api'n
-# 4. Sammanställ svaret.
-# 
-# 5. Kunna fetcha ett svar.
-# 6. Kunna sammanfatta det.
-#
-# 6. Leta vidare efter andra förslag, gå tillbaka till 2
-#
-#
-#
-#
 
+#Importing necesary imports
 from openai import OpenAI
 import os
 import requests
@@ -31,6 +17,7 @@ from fastapi import FastAPI
 
 app = FastAPI()
 
+#Chosing which origins of that are allowed for api requests. At the moment everything is allowed. 
 origins = ['*']
 
 app.add_middleware(
@@ -58,12 +45,11 @@ def extract_text_between(text: str, start: str, end: str) -> str:
         # Return an empty string if 'start' or 'end' is not found, or if they are in the wrong order.
         return ""
 
-
-
 ##################################
-#          API JSON              #
+#              API               #
 ##################################
 
+#Requesting API if it's JSON
 def requestApi(url):
     try:
         response = requests.get(url)
@@ -73,6 +59,7 @@ def requestApi(url):
         pass
         #print(f"An error occurred: {e}")
 
+#Requesting API if it's HTML
 def requestHtmlApi(url):
     try:   
         #print("Fetching html url")
@@ -92,6 +79,7 @@ def requestHtmlApi(url):
 #           "Memory"             #
 ##################################
 
+#This is the storage for all the propmts. by inputing an id and the other relelvant information needed for the prompt the function it will return the complete prompt.
 def chatContextFunc(id, apiAnswer, fdFragor, strucAnswer):
     if id == 1:
         return ("Du är en hjälpsam assisten som ska söka igenom en databas över Riksdagen. Användaren kommer ställa dig en fråga till dig för att hitta ett dokument"
@@ -134,14 +122,12 @@ def chatContextFunc(id, apiAnswer, fdFragor, strucAnswer):
                " Här kommer dina föredetta svar vilket du ska utgå ifrån:" + str(apiAnswer) + 
                 " När du har tagit fram en url vill jag att du svara med: [url:lägg url'n här.]"
                 " Till exempel [url:https://exempel.url.se/exempel]")     
-    
-def questAns(previous, question, answer, apiAnswer):
-    return previous + f"Användarens nästa Fråga var: ({question}). Och assistentens svar var: ({answer}). Api svar som du nu har tillgång till: ({apiAnswer})"
 
 ##################################
 #           Chat Func            #
 ##################################
 
+#Function to send the prompt to openAI and then strip out the url out of the answer, (if it doesn't return false then the function returns false.)
 def createURLsearch(question, questions, num, structuredAnswers):
     context = chatContextFunc(num,chatAnswers, questions, structuredAnswers)
 
@@ -174,6 +160,7 @@ def createURLsearch(question, questions, num, structuredAnswers):
         #print(apiAnswer.content)
     return apiAnswer
 
+#Function used to send prompt to openAI without then trying to extract a url.
 def normalChatCall(thingToShorten, question2, num):
     context = chatContextFunc(num,thingToShorten,"","")
     
@@ -207,6 +194,7 @@ structuredAnswers = []
 #         Loop functions         #
 ##################################
 
+#Function that handles when the apiAnswer should be shortened
 def loopShortenText(apiAnswer ,question):
     shortenedAnswer = normalChatCall(str(apiAnswer), question, 2)
 
@@ -214,6 +202,7 @@ def loopShortenText(apiAnswer ,question):
 
     return shortenedAnswer
 
+#Function that handles the createURLsearch function, and fixes the output for future use.
 def loopFetchApi(fraga):
     question = fraga
     questions.append(question)
@@ -251,6 +240,7 @@ def loopFetchApi(fraga):
 
     return structuredAnswer, question
 
+#Function that handles when a follow up question and it's coresponiding url needs to be found. 
 def loopFollowUp(question, structuredAnswers):
     answerContent = createURLsearch(question, question, 4, structuredAnswers)
 
@@ -263,16 +253,22 @@ def loopFollowUp(question, structuredAnswers):
 val = ["fetch api", "förkorta api svar", "följdfråga"]
 valt = "fetch api"
 
+#Test api root that returns Hello World
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
 
+#Main api endpoint that uses the userQuestion, determines where is should go using the variable valt and send the question to the corresponiding function.
 @app.get("/fraga/{userQuestion}")
 def read_item(userQuestion: str, q: Union[str, None] = None, val=val, valt=valt):
     loopVar = False
+
+    #This loop always stops once an answer has been sent to the user so that not multiple answers are sent on the same question. 
     while loopVar == False:
         if valt == "fetch api":
             answer, question = loopFetchApi(userQuestion)
+
+            #If the loopFetchApi returns False the next valt will be the followup, otherwise it will go to shortening the text.
             if answer == False:
                 valt = val[2]
             else:
@@ -282,7 +278,11 @@ def read_item(userQuestion: str, q: Union[str, None] = None, val=val, valt=valt)
             #print(answer)
             #input("Continue to shorten text.")
             svar = loopShortenText(answer, question)
+
+            #Here the loop is returned to like it was in the start allowing the next api request
             valt = val[0]
+
+            #Loop is stoped here. 
             loopVar = True
             return {"answer": svar, "q": q}
         elif valt == "följdfråga":
@@ -290,8 +290,7 @@ def read_item(userQuestion: str, q: Union[str, None] = None, val=val, valt=valt)
             answer = loopFollowUp(question, structuredAnswers)
             #print(answer)
             #print(question)
-
-            #Sätter till att förkorta svar. 
+            
             valt = val[1]
 
 

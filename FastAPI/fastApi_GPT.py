@@ -18,7 +18,6 @@ from openai import OpenAI
 import os
 import requests
 import json
-from bs4 import BeautifulSoup
 
 
 

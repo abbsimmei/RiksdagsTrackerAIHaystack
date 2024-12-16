@@ -1,0 +1,61 @@
+/* This is the tag for the whole multiselect box */
+
+
+.multiselect {
+  width: 400px !important;
+}
+
+@media (max-width: 560px) {
+  .multiselect {
+    width: 300px !important;
+    /* Adjust to your preferred width */
+  }
+}
+
+@media (max-width: 440px) {
+  .multiselect {
+    width: 224px !important;
+    /* Adjust to your preferred width */
+  }
+}
+
+/* This is the tag for the box and text of selected options */
+.multiselect__tag {
+  color: whitesmoke !important;
+  font-size: 16px !important;
+  background-color: rgb(142, 96, 168) !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+}
+
+/* This is the tag for the box which contains the list of items you can choose from */
+.multiselect__content-wrapper {
+  overflow-x: hidden !important;
+}
+
+/* This is the tag for the list of items you can choose from */
+.multiselect__content {}
+
+/* This is the tag for the list elements in the list of items you can choose from */
+.multiselect__element {}
+
+/* This is the tag for the "overlay" which comes up when you hover over a list item. (When it has not been selected) */
+.multiselect__option {
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+}
+
+.multiselect__option--highlight {
+  background-color: rgb(142, 96, 168) !important;
+}
+
+/* This is the tag for the "overlay" which comes up when you hover over a list item. (When it has been selected) */
+.multiselect__option--selected {}
+
+.multiselect__option--selected.multiselect__option--highlight {
+  background-color: #f87171 !important;
+}
+
+.multiselect__placeholder {
+  font-size: 16px;
+}
